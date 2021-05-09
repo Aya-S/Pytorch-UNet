@@ -12,7 +12,7 @@ def eval_net(net, loader, device):
     n_val = len(loader)  # the number of batch
     tot = 0
 
-    with tqdm(total=n_val, desc='Validation round', unit='batch', leave=False) as pbar:
+    with tqdm(total=n_val, desc='Validation round', unit='batch', leave=False , disable=True) as pbar:
         for batch in loader:
             imgs, true_masks = batch['image'], batch['mask']
             imgs = imgs.to(device=device, dtype=torch.float32)
@@ -26,6 +26,13 @@ def eval_net(net, loader, device):
             else:
                 pred = torch.sigmoid(mask_pred)
                 pred = (pred > 0.5).float()
+
+                #print(true_masks)
+                # from numpy import asarray
+                # pixels = asarray(true_masks.cpu())
+                # # confirm pixel range is 0-255
+                # print('Data Type in evallllll: %s' % pixels.dtype)
+                # print('Min: %.3f, Max: %.3f' % (pixels.min(), pixels.max()))
                 tot += dice_coeff(pred, true_masks).item()
             pbar.update()
 

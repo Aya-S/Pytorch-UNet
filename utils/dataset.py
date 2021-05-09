@@ -40,6 +40,7 @@ class BasicDataset(Dataset):
         if img_trans.max() > 1:
             img_trans = img_trans / 255
 
+
         return img_trans
 
     def __getitem__(self, i):
@@ -51,14 +52,31 @@ class BasicDataset(Dataset):
             f'Either no mask or multiple masks found for the ID {idx}: {mask_file}'
         assert len(img_file) == 1, \
             f'Either no image or multiple images found for the ID {idx}: {img_file}'
-        mask = Image.open(mask_file[0])
-        img = Image.open(img_file[0])
+        mask = Image.open(mask_file[0]).convert('L')
+        img = Image.open(img_file[0]).convert('L')
+
+        # from numpy import asarray
+        # pixels = asarray(mask)
+        # # confirm pixel range is 0-255
+        # print('Data Type: %s' % pixels.dtype)
+        # print('Min: %.3f, Max: %.3f' % (pixels.min(), pixels.max()))
+        # # convert from integers to floats
+        # pixels = pixels.astype('float32')
+        # # normalize to the range 0-1
+        # pixels /= 255.0
+        # # confirm the normalization
+        # print('Min: %.3f, Max: %.3f' % (pixels.min(), pixels.max()))
 
         assert img.size == mask.size, \
             f'Image and mask {idx} should be the same size, but are {img.size} and {mask.size}'
 
         img = self.preprocess(img, self.scale)
         mask = self.preprocess(mask, self.scale)
+
+        # pixels = asarray(mask)
+        # # confirm pixel range is 0-255
+        # print('postprocessesss: %s' % pixels.dtype)
+        # print('Min: %.3f, Max: %.3f' % (pixels.min(), pixels.max()))
 
         return {
             'image': torch.from_numpy(img).type(torch.FloatTensor),

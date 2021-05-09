@@ -9,16 +9,25 @@ import torch.nn as nn
 from torch import optim
 from tqdm import tqdm
 
+import dice_loss
 from eval import eval_net
 from unet import UNet
 
 from torch.utils.tensorboard import SummaryWriter
 from utils.dataset import BasicDataset
 from torch.utils.data import DataLoader, random_split
+base = '/data/hackathon/Pytorch-UNet/'
+#base ="/home/aya/hackathon/Pytorch-UNet-20210507T150601Z-001/"
+dir_img = base+'data/imgs/'
+dir_mask = base + 'data/masks/'
 
-dir_img = 'data/imgs/'
-dir_mask = 'data/masks/'
-dir_checkpoint = 'checkpoints/'
+from datetime import datetime
+
+now = datetime.now()
+dt_string = now.strftime("%d-%m-%Y-%H_%M_%S")
+print("date and time =", dt_string)
+dir_checkpoint = 'checkpoints/'+dt_string+'/'
+os.mkdir(dir_checkpoint)
 
 
 def train_net(net,
@@ -56,7 +65,8 @@ def train_net(net,
     if net.n_classes > 1:
         criterion = nn.CrossEntropyLoss()
     else:
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = dice_loss.DiceBCELoss()
+        #criterion = nn.BCEWithLogitsLoss()
 
     for epoch in range(epochs):
         net.train()
@@ -76,6 +86,7 @@ def train_net(net,
                 true_masks = true_masks.to(device=device, dtype=mask_type)
 
                 masks_pred = net(imgs)
+                #print(true_masks)
                 loss = criterion(masks_pred, true_masks)
                 epoch_loss += loss.item()
                 writer.add_scalar('Loss/train', loss.item(), global_step)
@@ -130,7 +141,7 @@ def get_args():
                         help='Number of epochs', dest='epochs')
     parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=1,
                         help='Batch size', dest='batchsize')
-    parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.0001,
+    parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.01,
                         help='Learning rate', dest='lr')
     parser.add_argument('-f', '--load', dest='load', type=str, default=False,
                         help='Load model from a .pth file')
@@ -154,7 +165,7 @@ if __name__ == '__main__':
     #   - For 1 class and background, use n_classes=1
     #   - For 2 classes, use n_classes=1
     #   - For N > 2 classes, use n_classes=N
-    net = UNet(n_channels=3, n_classes=1, bilinear=True)
+    net = UNet(n_channels=1, n_classes=1, bilinear=True)
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'
                  f'\t{net.n_classes} output channels (classes)\n'
